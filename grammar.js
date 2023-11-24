@@ -1,4 +1,12 @@
 const PREC = {
+  bitwise_and: 17,
+  logical_or: 16,
+  logical_and: 15,
+  equal: 14,
+  offsetof: 12,
+  shift: 11,
+  add: 10,
+  multiply: 9,
   attributes: 8,
   primary: 7,
   unary: 6,
@@ -109,6 +117,19 @@ const  additive_operators = ['+', '-', '~', '|'];
 const  comparison_operators = ['>', '<', '<=', '>=', '==', '!='];
 const  assignment_operators = ['=','=='];
 
+const binary_operators = [
+    '=',
+    '==',
+    '!=',
+    '<=',
+    '>=',
+    '<',
+    '>',
+    '+',
+    '-',
+    '*',
+]
+
 module.exports = grammar({
     name: 'biscuit_language',
 
@@ -127,6 +148,7 @@ module.exports = grammar({
 
     conflicts: $ => [
         [$._statement, $._simple_statement],
+        [$._expression, $.binary_expression],
     ],
 
     extras: $ => [
@@ -162,6 +184,14 @@ module.exports = grammar({
          )
      ),
 
+
+     binary_expression: $ => prec.left(1, seq(
+         field('left', $._expression),
+         alias(choice(...binary_operators), $.operator),
+         field('right', $._expression),
+     )),
+
+
      _top_level_declaration: ($) =>
      choice(
          $.function_definition,
@@ -173,6 +203,7 @@ module.exports = grammar({
          $.block_statement,
          $.defer_statement,
          $.using_statement,
+         $.if_statement,
      ),
 
 
@@ -207,8 +238,19 @@ module.exports = grammar({
 
     using_statement: $ => seq(
         alias('using', $.keyword),
-        field('name', $._expression),
+        field('name', $.identifier),
         token(";"),
+    ),
+
+    enum_block: $ => seq(
+      '{',
+          repeat(
+              seq(
+                  field('element', seq($._field_identifier)),
+                  token(';'),
+              ),
+          ),
+      '}'
     ),
 
      enum_definition: $ => seq(
@@ -216,14 +258,7 @@ module.exports = grammar({
          '::',
          alias('enum', $.keyword),
          optional($.builtin_type),
-         '{',
-                 repeat(
-                     seq(
-                         $.identifier,
-                         choice(";", $._automatic_separator),
-                     )
-                 ),
-                 '}',
+         $.enum_block,
          ';',
      ),
 
@@ -237,6 +272,20 @@ module.exports = grammar({
          optional($.builtin_procedure),
          $.block
      ),
+
+     if_statement: $ => prec.left(1, seq(
+         alias('if', $.keyword),
+         field('condition', seq($._expression)),
+         $.block,
+         optional($.else_statement)
+     )),
+
+     else_statement: $ => prec.left(1, seq(
+         alias('else', $.keyword),
+         optional($.if_statement),
+         optional($.block)
+     )),
+
 
      _true: ($) => "true",
      _false: ($) => "false",
@@ -329,7 +378,8 @@ module.exports = grammar({
          $.defer_statement,
          $.using_statement,
          $.block_statement,
-         $._simple_statement
+         $._simple_statement,
+         $.if_statement
      ),
 
     _label_identifier: $ => alias($.identifier, $.label_identifier),
@@ -343,12 +393,19 @@ module.exports = grammar({
      identifier: _ => /[_\p{XID_Start}][_\p{XID_Continue}]*/,
      bool_literal: $ => choice($._true, $._false),
 
+     identifier_access: $ => seq(
+        $.identifier,
+         token('.'),
+         $.identifier,
+     ),
 
      _expression: $ => choice(
          $.identifier,
+         $.identifier_access,
          $.float_literal,
          $._string_literal,
          $.bool_literal,
+         $.binary_expression,
          $.int_literal
      ),
 
