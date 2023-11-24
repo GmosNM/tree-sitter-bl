@@ -43,7 +43,6 @@ const binary_digits = seq(
   repeat(seq(optional("_"), binary_digit))
 );
 
-
 const decimal_exponent = seq(
   choice("e", "E", "f", "F"),
   optional(choice("+", "-")),
@@ -51,11 +50,10 @@ const decimal_exponent = seq(
 );
 
 const decimal_float_literal = choice(
-  seq(decimal_digits, ".", decimal_digits, optional(decimal_exponent), optional("f")),
-  seq(decimal_digits, decimal_exponent, optional("f")),
+  seq(decimal_digits, ".", optional(decimal_digits), optional(decimal_exponent), optional("f")),
+  seq(decimal_digits, optional(decimal_exponent), optional("f")),
   seq(".", decimal_digits, optional(decimal_exponent), optional("f"))
 );
-
 
 const hex_literal = seq("0", choice("x", "X"), optional("_"), hex_digits);
 const octal_literal = seq(
@@ -76,6 +74,7 @@ const int_literal = choice(
   octal_literal,
   hex_literal
 );
+
 
 
 const hex_exponent = seq(
@@ -166,6 +165,8 @@ module.exports = grammar({
         [$._field_identifier, $._identifier_operator, $._expression],
         [$._identifier_operator ,$._expression],
         [$.identifier_access],
+        [$.enum_definition, $.local_function_definition, $.function_definition, $._field_identifier],
+        [$.local_function_definition, $._field_identifier],
     ],
 
     extras: $ => [
@@ -281,6 +282,17 @@ module.exports = grammar({
          alias(';', $.operator),
      ),
 
+
+     local_function_definition: $ => seq(
+         field('name', seq($.identifier)),
+         '::',
+         alias('fn', $.keyword),
+         $.parameter_list,
+         field('type', seq($.builtin_type)),
+         optional($.builtin_procedure),
+         $.block,
+         alias(';', $.operator),
+     ),
 
      function_definition: $ => seq(
          field('name', seq($.identifier)),
@@ -411,11 +423,17 @@ module.exports = grammar({
 
 
 
-    keyed_element: ($) => seq(
-      field("argument", $._element_key), 
-      ":",
-      field("type", $.builtin_type)
-    ),
+     keyed_element: ($) => seq(
+         field("argument", $._element_key), 
+         ":",
+         field("type", $.builtin_type),
+         optional(
+             seq(
+                 "=",
+                 field("default", $._expression),
+             ),
+         ),
+     ),
 
     _field_identifier: ($) => alias($.identifier, $.field_identifier),
 
@@ -468,7 +486,8 @@ module.exports = grammar({
          $.break_statement,
          $.continue_statement,
          $.switch_statement,
-         $.loop_statement
+         $.loop_statement,
+         $.local_function_definition
      ),
 
      mutable_decl: $ => prec.left(1, seq(
