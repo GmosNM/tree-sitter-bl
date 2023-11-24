@@ -111,14 +111,10 @@ const builtin_type_keywords = [
     "f64",
     "type",
     "Any",
+    "string_view",
+    "string",
+    "Error",
 ];
-
-
-const  multiplicative_operators = ['*', '/', '%', '%%', '<<', '>>', '&', '&~'];
-const  additive_operators = ['+', '-', '~', '|'];
-const  comparison_operators = ['>', '<', '<=', '>=', '==', '!='];
-const  assignment_operators = ['=','=='];
-
 
 const _assignment_operators = [
     '+=',
@@ -441,7 +437,6 @@ module.exports = grammar({
              alias(';', $.operator),
          ),
      ),
-
 
      local_function_definition: $ => seq(
          field('name', seq($.identifier)),
