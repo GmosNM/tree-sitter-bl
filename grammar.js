@@ -117,6 +117,14 @@ const  additive_operators = ['+', '-', '~', '|'];
 const  comparison_operators = ['>', '<', '<=', '>=', '==', '!='];
 const  assignment_operators = ['=','=='];
 
+
+const _assignment_operators = [
+    '+=',
+    ':=',
+    '=',
+    '-=',
+]
+
 const binary_operators = [
     '=',
     '==',
@@ -149,6 +157,10 @@ module.exports = grammar({
     conflicts: $ => [
         [$._statement, $._simple_statement],
         [$._expression, $.binary_expression],
+        [$.identifier, $._field_identifier],
+        [$.enum_definition, $.function_definition, $._field_identifier],
+        [$._field_identifier, $._expression],
+        [$.mutable_decl, $.setter],
     ],
 
     extras: $ => [
@@ -216,7 +228,6 @@ module.exports = grammar({
      ),
 
      block_statement: $ => prec(1, seq(
-         optional(field('label', seq($._label_identifier, ':'))),
          $.block,
      )),
 
@@ -227,11 +238,10 @@ module.exports = grammar({
      ),
 
      function_call:  $ => seq(
-         field('name', $.identifier),
-         optional(field('arguments', $.parameter_list)),
-         ';',
+         field('name', $._field_identifier),
+         field('arguments', $.parameter_list),
+         alias(';', $.operator),
      ),
-
 
      _expression_pack: $ => prec.left(list1(',', $._expression)),
 
@@ -239,7 +249,7 @@ module.exports = grammar({
     using_statement: $ => seq(
         alias('using', $.keyword),
         field('name', $.identifier),
-        token(";"),
+        alias(';', $.operator),
     ),
 
     enum_block: $ => seq(
@@ -247,7 +257,7 @@ module.exports = grammar({
           repeat(
               seq(
                   field('element', seq($._field_identifier)),
-                  token(';'),
+                  alias(';', $.operator),
               ),
           ),
       '}'
@@ -259,7 +269,7 @@ module.exports = grammar({
          alias('enum', $.keyword),
          optional($.builtin_type),
          $.enum_block,
-         ';',
+         alias(';', $.operator),
      ),
 
 
@@ -272,6 +282,32 @@ module.exports = grammar({
          optional($.builtin_procedure),
          $.block
      ),
+
+     loop_statement: $ => choice(
+         // infinite loop
+         prec.left(1, seq(
+             alias('loop', $.keyword),
+             $.block,
+         )),
+
+         // Loop without initialization and increment
+         prec.left(1, seq(
+             alias('loop', $.keyword),
+             field('condition', $._expression),
+             $.block,
+         )),
+
+         // Loop with initialization, condition, and increment
+         prec.left(1, seq(
+             alias('loop', $.keyword),
+             field('init', $._declarator),
+             field('condition', $._expression),
+             token(';'),
+             field('increment', $._declarator),
+             $.block,
+         )),
+     ),
+
 
      if_statement: $ => prec.left(1, seq(
          alias('if', $.keyword),
@@ -347,6 +383,8 @@ module.exports = grammar({
          ')'
      ),
 
+
+
     keyed_element: ($) => seq(
       field("argument", $._element_key), 
       ":",
@@ -372,6 +410,17 @@ module.exports = grammar({
       '}'
     ),
 
+
+     break_statement: $ => seq(
+         alias('break', $.keyword),
+         ';',
+     ),
+
+     continue_statement: $ => seq(
+         alias('continue', $.keyword),
+         ';',
+     ),
+
      _statement: $ => choice(
          $.return_statement,
          $.function_call,
@@ -380,41 +429,48 @@ module.exports = grammar({
          $.block_statement,
          $._simple_statement,
          $._declarator,
-         $.if_statement
+         $.if_statement,
+         $.break_statement,
+         $.continue_statement,
+         $.loop_statement
      ),
 
-     _label_identifier: $ => alias($.identifier, $.label_identifier),
-     immutable_decl: $ => seq(
-         $.identifier,
+     immutable_decl: $ => prec.left(1, seq(
+         $._field_identifier,
          alias('::', $.operator),
          $._expression,
-         token(';'),
-     ),
+         alias(';', $.operator)
+     )),
 
-     mutable_decl: $ => seq(
-         $.identifier,
+     mutable_decl: $ => prec.left(1, seq(
+         $._field_identifier,
          alias(':=', $.operator),
          alias($._expression, $.field_identifier),
-         token(';'),
-     ),
-
+         alias(';', $.operator)
+     )),
 
      typed_mutable_decl: $ => prec.left(1, seq(
-         $.identifier,
+         $._field_identifier,
          alias(':', $.operator),
          $.builtin_type,
-         token(';'),
+         alias(';', $.operator)
      )),
 
 
      typed_immutable__decl: $ => prec.left(1, seq(
-         $.identifier,
+         $._field_identifier,
          alias('::', $.operator),
          $.builtin_type,
-         token(';'),
+         alias(';', $.operator)
      )),
 
 
+     setter: $ => prec.right(1,seq(
+         $._field_identifier,
+         alias(choice(..._assignment_operators), $.operator),
+         $._expression,
+         alias(';', $.operator)
+     )),
 
 
      _declarator: $ => choice(
@@ -422,12 +478,13 @@ module.exports = grammar({
          $.mutable_decl,
          $.typed_mutable_decl,
          $.typed_immutable__decl,
+         $.setter,
      ),
 
     return_statement: $ => seq(
       alias('return', $.keyword),
       $._expression,
-      ';'
+      alias(';', $.operator)
     ),
 
      identifier: _ => /[_\p{XID_Start}][_\p{XID_Continue}]*/,
