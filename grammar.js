@@ -45,15 +45,17 @@ const binary_digits = seq(
 
 
 const decimal_exponent = seq(
-  choice("e", "E"),
+  choice("e", "E", "f", "F"),
   optional(choice("+", "-")),
   decimal_digits
 );
+
 const decimal_float_literal = choice(
-  seq(decimal_digits, ".", decimal_digits, optional(decimal_exponent)),
-  seq(decimal_digits, decimal_exponent),
-  seq(".", decimal_digits, optional(decimal_exponent))
+  seq(decimal_digits, ".", decimal_digits, optional(decimal_exponent), optional("f")),
+  seq(decimal_digits, decimal_exponent, optional("f")),
+  seq(".", decimal_digits, optional(decimal_exponent), optional("f"))
 );
+
 
 const hex_literal = seq("0", choice("x", "X"), optional("_"), hex_digits);
 const octal_literal = seq(
@@ -161,6 +163,9 @@ module.exports = grammar({
         [$.enum_definition, $.function_definition, $._field_identifier],
         [$._field_identifier, $._expression],
         [$.mutable_decl, $.setter],
+        [$._field_identifier, $._identifier_operator, $._expression],
+        [$._identifier_operator ,$._expression],
+        [$.identifier_access],
     ],
 
     extras: $ => [
@@ -208,6 +213,7 @@ module.exports = grammar({
      choice(
          $.function_definition,
          $.enum_definition,
+         $.procedure,
      ),
 
      _statement: $ => choice(
@@ -238,7 +244,10 @@ module.exports = grammar({
      ),
 
      function_call:  $ => seq(
-         field('name', $._field_identifier),
+         choice(
+             field('name', $.identifier),
+             field('name', $.identifier_access),
+         ),
          field('arguments', $.parameter_list),
          alias(';', $.operator),
      ),
@@ -308,6 +317,20 @@ module.exports = grammar({
          )),
      ),
 
+     switch_statement: $ => prec.left(1, seq(
+         alias('switch', $.keyword),
+         field('condition', seq($._expression)),
+         token('{'),
+         repeat($._expression),
+         optional(
+             seq(
+                 alias('default', $.keyword),
+                 optional($.block),
+                 optional(alias(';', $.operator)),
+             ),
+         ),
+         token('}'),
+     )),
 
      if_statement: $ => prec.left(1, seq(
          alias('if', $.keyword),
@@ -323,8 +346,9 @@ module.exports = grammar({
      )),
 
 
-     _true: ($) => "true",
-     _false: ($) => "false",
+     null: _ => 'null',
+     true: _ => 'true',
+     false: _ => 'false',
 
      _string_literal: ($) =>
      choice(
@@ -368,6 +392,7 @@ module.exports = grammar({
                      choice(
                          $._expression,
                          $.keyed_element,
+                         $.builtin_procedure,
                      ),
                  ),
              ),
@@ -377,6 +402,7 @@ module.exports = grammar({
                      choice(
                          $._expression,
                          $.keyed_element,
+                         $.builtin_procedure,
                      )
                  )
              ),
@@ -402,7 +428,16 @@ module.exports = grammar({
         $.function_call,
       ),
 
-    builtin_type: ($) => choice(...builtin_type_keywords),
+    builtin_type: ($) => seq(
+         optional(
+             seq(
+                 alias('*', $.operator),
+             ),
+         ),
+        choice(
+        ...builtin_type_keywords
+        )
+    ),
 
     block: $ => seq(
       '{',
@@ -413,12 +448,12 @@ module.exports = grammar({
 
      break_statement: $ => seq(
          alias('break', $.keyword),
-         ';',
+         alias(';', $.operator),
      ),
 
      continue_statement: $ => seq(
          alias('continue', $.keyword),
-         ';',
+         alias(';', $.operator),
      ),
 
      _statement: $ => choice(
@@ -432,20 +467,19 @@ module.exports = grammar({
          $.if_statement,
          $.break_statement,
          $.continue_statement,
+         $.switch_statement,
          $.loop_statement
      ),
-
-     immutable_decl: $ => prec.left(1, seq(
-         $._field_identifier,
-         alias('::', $.operator),
-         $._expression,
-         alias(';', $.operator)
-     )),
 
      mutable_decl: $ => prec.left(1, seq(
          $._field_identifier,
          alias(':=', $.operator),
          alias($._expression, $.field_identifier),
+         optional(
+             seq(
+                 $.parameter_list,
+             ),
+         ),
          alias(';', $.operator)
      )),
 
@@ -453,14 +487,52 @@ module.exports = grammar({
          $._field_identifier,
          alias(':', $.operator),
          $.builtin_type,
+         optional(
+             seq(
+                 $.var_procedure,
+             ),
+         ),
+         optional(
+             seq(
+                 alias('=', $.operator),
+                 alias($._expression, $.field_identifier),
+             ),
+         ),
+         optional(
+             seq(
+                 alias(':', $.operator),
+                 alias($._expression, $.field_identifier),
+             ),
+         ),
          alias(';', $.operator)
      )),
 
 
-     typed_immutable__decl: $ => prec.left(1, seq(
+
+     immutable_decl: $ => prec.left(1, seq(
+         repeat(
+             seq(
+                 $._field_identifier,
+                 alias(',', $.operator),
+             ),
+         ),
          $._field_identifier,
          alias('::', $.operator),
-         $.builtin_type,
+         optional(
+             seq(
+                 $.builtin_type,
+             ),
+         ),
+         optional(
+             seq(
+                 alias($._expression, $.field_identifier),
+             ),
+         ),
+         optional(
+             seq(
+                 $.parameter_list,
+             ),
+         ),
          alias(';', $.operator)
      )),
 
@@ -477,7 +549,6 @@ module.exports = grammar({
          $.immutable_decl,
          $.mutable_decl,
          $.typed_mutable_decl,
-         $.typed_immutable__decl,
          $.setter,
      ),
 
@@ -488,12 +559,46 @@ module.exports = grammar({
     ),
 
      identifier: _ => /[_\p{XID_Start}][_\p{XID_Continue}]*/,
-     bool_literal: $ => choice($._true, $._false),
+     bool_literal: $ => choice($.true, $.false),
 
      identifier_access: $ => seq(
          field('element', $._field_identifier),
          token('.'),
          field('element', $._field_identifier),
+         optional(
+             seq(
+                 $.parameter_list,
+             ),
+         ),
+         optional(
+             seq(
+                 $.block,
+             ),
+         ),
+     ),
+
+     _identifier_operator: $ => seq(
+         optional(
+             seq(
+                 alias('&', $.operator),
+             ),
+         ),
+         optional(
+             seq(
+                 alias('@', $.operator),
+             ),
+         ),
+         field('element', $.identifier),
+     ),
+
+
+     char_literal: $ => seq(
+         choice('L\'', 'u\'', 'U\'', 'u8\'', '\''),
+         choice(
+             $.escape_sequence,
+             alias(token.immediate(/[^\n']/), $.character),
+         ),
+         '\'',
      ),
 
      _expression: $ => choice(
@@ -503,13 +608,36 @@ module.exports = grammar({
          $._string_literal,
          $.bool_literal,
          $.binary_expression,
+         $._identifier_operator,
+         $.char_literal,
+         $.null,
          $.int_literal
      ),
 
     builtin_procedure: $ => token(choice(
         '#inline',
         '#comptime',
+        '#test',
+        '#file',
     )),
+
+    var_procedure: $ => token(choice(
+        '#thread_local',
+        '#noinit',
+    )),
+
+    user_procedure: $ => token(choice(
+        '#load',
+        '#import',
+        '#scope',
+        '#private',
+    )),
+
+    procedure: $ => seq(
+        $.user_procedure,
+        $._string_literal,
+    ),
+
 
      comment: $ => token(choice(
          seq('//', /.*/),
