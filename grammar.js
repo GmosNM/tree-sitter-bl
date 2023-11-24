@@ -379,10 +379,50 @@ module.exports = grammar({
          $.using_statement,
          $.block_statement,
          $._simple_statement,
+         $._declarator,
          $.if_statement
      ),
 
-    _label_identifier: $ => alias($.identifier, $.label_identifier),
+     _label_identifier: $ => alias($.identifier, $.label_identifier),
+     immutable_decl: $ => seq(
+         $.identifier,
+         alias('::', $.operator),
+         $._expression,
+         token(';'),
+     ),
+
+     mutable_decl: $ => seq(
+         $.identifier,
+         alias(':=', $.operator),
+         alias($._expression, $.field_identifier),
+         token(';'),
+     ),
+
+
+     typed_mutable_decl: $ => prec.left(1, seq(
+         $.identifier,
+         alias(':', $.operator),
+         $.builtin_type,
+         token(';'),
+     )),
+
+
+     typed_immutable__decl: $ => prec.left(1, seq(
+         $.identifier,
+         alias('::', $.operator),
+         $.builtin_type,
+         token(';'),
+     )),
+
+
+
+
+     _declarator: $ => choice(
+         $.immutable_decl,
+         $.mutable_decl,
+         $.typed_mutable_decl,
+         $.typed_immutable__decl,
+     ),
 
     return_statement: $ => seq(
       alias('return', $.keyword),
@@ -394,9 +434,9 @@ module.exports = grammar({
      bool_literal: $ => choice($._true, $._false),
 
      identifier_access: $ => seq(
-        $.identifier,
+         field('element', $._field_identifier),
          token('.'),
-         $.identifier,
+         field('element', $._field_identifier),
      ),
 
      _expression: $ => choice(
