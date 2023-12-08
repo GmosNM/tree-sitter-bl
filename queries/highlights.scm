@@ -1,38 +1,74 @@
-(procedure)@constant.macro
-(keyword) @keyword
-(operator) @operator
-(builtin_procedure) @label
-(var_procedure) @label
-(identifier) @variable
-(bool_literal) @boolean
-(builtin_type) @type
-(escape_sequence) @string.escape
-(function_definition name: (identifier) @function)
-(enum_definition name: (identifier) @function)
-(enum_block element: (field_identifier) @variable.parameter)
-(struct_definition name: (identifier) @function)
-(struct_block element: (field_identifier) @variable.parameter)
-(identifier_access element: (field_identifier) @parameter)
+
+(call_expression
+  function: (identifier) @function)
+
+
+(function_item (identifier) @function)
+(function_signature_item (identifier) @function)
+
+(line_comment) @comment
+(block_comment) @comment
+
+(parameter (identifier) @variable.parameter)
+
+
+(type_identifier) @type
+(primitive_type) @type.builtin
 (field_identifier) @property
 
-(function_call
-  name: (identifier) @function.builtin
-  (.match? @function.builtin "^(print|assert|sizeof|typeof|alignof|typeinfo|typekind|typeid|panic|static_assert|debugbreak)$"))
+(flags) @label
 
-[
-  (interpreted_string_literal)
-  (raw_string_literal)
-] @string
+(char_literal) @string
+(string_literal) @string
+(raw_string_literal) @string
 
-[
-  (int_literal)
-  (float_literal)
-] @number
+(escape_sequence) @string.escape
 
-
-[
-  (null)
-] @constant.builtin
+(integer_literal) @constant.builtin
+(float_literal) @constant.builtin
+(boolean_literal) @constant.builtin
+(null_literal) @constant
 
 
-(comment) @comment
+
+"(" @punctuation.bracket
+")" @punctuation.bracket
+"[" @punctuation.bracket
+"]" @punctuation.bracket
+"{" @punctuation.bracket
+"}" @punctuation.bracket
+
+
+"::" @punctuation.delimiter
+":=" @punctuation.delimiter
+":" @punctuation.delimiter
+
+"fn" @keyword
+"enum" @keyword
+"struct" @keyword
+"return" @keyword
+"if" @keyword
+"else" @keyword
+"defer" @keyword
+"loop" @keyword
+"switch" @keyword
+"auto" @keyword
+"default" @keyword
+"cast" @keyword
+
+
+"#import" @keyword
+"#load" @keyword
+"#scope" @keyword
+"#private" @keyword
+
+
+";" @punctuation.delimiter
+"," @punctuation.delimiter
+
+
+
+"*" @operator
+"&" @operator
+"*?" @operator
+"!" @operator
