@@ -92,6 +92,9 @@ module.exports = grammar({
         [$.assignment_expression, $.refrence_type],
         [$.compound_assignment_expr, $.refrence_type],
         [$.block],
+        [$.return_argements, $.parameters],
+        [$.return_expression, $.assignment_expression],
+        [$.return_expression, $.compound_assignment_expr]
     ],
 
     word: $ => $.identifier,
@@ -170,6 +173,7 @@ module.exports = grammar({
             'fn',
             optional(field('parameters', $.parameters)),
             optional(field('return_type', $._type)),
+            optional(field('return_types', $.return_argements)),
             optional(field('function_flags', $.flags)),
             optional(seq('flag', field('flag_param', $.metavariable))),
             field('body', $.block),
@@ -280,11 +284,19 @@ module.exports = grammar({
         return_expression: $ => choice(
             prec.left(seq(
                 'return',
-                $._expression,
+                seq($._expression, repeat(seq(',', $._expression))),
                 optional($.block),
             )),
             prec(-1, 'return'),
         ),
+
+
+        return_argements: $ => prec.left(PREC.call, seq(
+            '(',
+                sepBy(',', seq($._type)),
+                optional(','),
+            ')',
+        )),
 
         defer_expression: $ => choice(
             prec.left(seq('defer', $._expression)),
