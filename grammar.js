@@ -217,6 +217,7 @@ module.exports = grammar({
         // Section - Expressions
 
         _expression_except_range: $ => choice(
+            $.struct_expression,
             $.call_expression,
             $.return_expression,
             $.defer_expression,
@@ -280,6 +281,28 @@ module.exports = grammar({
             field('arguments', $.arguments),
         )),
 
+        struct_expression: $ => prec.left(PREC.call, seq(
+            field('name', $._type_identifier),
+            field('body', $.field_initializer_list),
+        )),
+
+        field_initializer_list: $ => seq(
+            '.',
+            '{',
+            sepBy(',', choice(
+                $.identifier,
+                $.struct_initializer,
+            )),
+            optional(','),
+            '}',
+        ),
+
+
+        struct_initializer: $ => prec.left(PREC.additive,seq(
+          field('name', $._field_identifier),
+          '=',
+          field('value', $._expression),
+        )),
 
         return_expression: $ => choice(
             prec.left(seq(
@@ -539,6 +562,8 @@ module.exports = grammar({
             "#noinit",
             "#thread_local",
             "#test",
+            "#build_entry",
+            "#entry",
         ),
 
         metavariable: _ => /\$[a-zA-Z_]\w*/,

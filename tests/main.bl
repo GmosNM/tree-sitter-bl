@@ -1,0 +1,10 @@
+
+Person :: struct {
+    id: s32;
+    name: string_view;
+    age: s32;
+}
+
+main :: fn () s32 {
+    X :: Person.{ id = 1, name = "Martin", age = 20 };
+}
