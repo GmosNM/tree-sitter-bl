@@ -1,0 +1,11 @@
+main :: fn () s32 {
+    s32_ptr : *s32;
+    u32_ptr : *u32;
+
+    // auto cast from *u32 to *s32
+    s32_ptr = auto u32_ptr;
+
+    // keep expession type s32
+    i := auto 10;
+    return 0;
+};

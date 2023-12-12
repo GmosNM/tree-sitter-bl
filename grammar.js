@@ -96,7 +96,11 @@ module.exports = grammar({
         [$.block],
         [$.return_argements, $.parameters],
         [$.return_expression, $.assignment_expression],
-        [$.return_expression, $.compound_assignment_expr]
+        [$.return_expression, $.compound_assignment_expr],
+        [$.bit_flip_expression, $.binary_expression],
+        [$.function_item, $._type],
+        [$.field_access_expression],
+        [$.field_access_expression, $.type_access],
     ],
 
     word: $ => $.identifier,
@@ -128,6 +132,7 @@ module.exports = grammar({
             field('name', $._type_identifier),
             '::',
             'struct',
+            optional(field('struct_flags', $.flags)),
             field('body', $.field_declaration_list),
             optional(';'),
         ),
@@ -190,7 +195,7 @@ module.exports = grammar({
             '::',
             'fn',
             optional(field('parameters', $.parameters)),
-            optional(field('return_type', $._type)),
+            optional(field('return_type', choice($._type, $._type_identifier))),
             optional(field('return_types', $.return_argements)),
             optional(field('function_flags', $.flags)),
             optional(seq('flag', field('flag_param', $.metavariable))),
@@ -250,6 +255,9 @@ module.exports = grammar({
             $.parenthesized_expression,
             $.type_cast_expression,
             $.field_access_expression,
+            $.bit_flip_expression,
+            $.pointer_expression,
+            $.refrence_expression,
             prec.left($.identifier),
             alias(choice(...builtin_types), $.identifier),
             $.metavariable,
@@ -276,7 +284,6 @@ module.exports = grammar({
         )),
 
         field_expression: $ => prec(PREC.field, seq(
-            optional(choice('&', '*')),
             field('value', $._expression),
             '.',
             field('field', choice(
@@ -285,6 +292,23 @@ module.exports = grammar({
             )),
             optional($.array_index),
         )),
+
+
+        pointer_expression: $ => prec.left(PREC.field, seq(
+            '*',
+            $._expression,
+        )),
+
+        refrence_expression: $ => prec.left(PREC.field, seq(
+            '&',
+            $._expression,
+        )),
+
+        pointer_dereference_expression: $ => prec.left(PREC.field, seq(
+            '@',
+            $._expression,
+        )),
+
 
         array_index: $ => seq(
             '[', $._expression, ']',
@@ -443,6 +467,11 @@ module.exports = grammar({
             $._expression,
         )),
 
+        bit_flip_expression: $ => prec(PREC.bitxor, seq(
+            '~',
+            $._expression,
+        )),
+
         binary_expression: $ => {
             const table = [
                 [PREC.and, '&&'],
@@ -534,15 +563,20 @@ module.exports = grammar({
             optional($._expression),
         ),
 
-        _type: $ => choice(
+
+        // types
+
+        _type: $ => prec.right(0, choice(
             $._type_identifier,
             $.pointer_type,
             $.pointer_or_null_type,
             $.array_type,
             $.null_type,
             $.refrence_type,
+            $.type_access,
+            $.pointer_dereference_type,
             alias(choice(...builtin_types), $.primitive_type),
-        ),
+        )),
 
         pointer_or_null_type: $ => seq(
             '*?',
@@ -551,10 +585,16 @@ module.exports = grammar({
         ),
 
         pointer_type: $ => seq(
-            choice('*','@'),
+            '*',
             field('type', $._type),
             optional($._expression),
         ),
+
+        pointer_dereference_type: $ => prec.left(PREC.field,seq(
+            '@',
+            field('type', $._type),
+            optional($._expression),
+        )),
 
         null_type: $ => seq(
             '?',
@@ -575,6 +615,11 @@ module.exports = grammar({
             field('type', $._type),
             optional($.parameters),
         ),
+
+        type_access: $ => prec.left(0, seq(
+            field("name",$._type_identifier),
+            repeat1(field("member",seq('.', $._type_identifier))),
+        )),
 
 
         flags: $ => choice(

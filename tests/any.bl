@@ -1,0 +1,14 @@
+
+
+foo :: fn (v: Any) {
+    assert(v.type_info.kind == TypeKind.TYPE);
+
+    data_info := cast(*TypeInfo) v.data;
+    assert(data_info.kind == TypeKind.INT);
+}
+
+
+main :: fn() s32{
+    foo(s32);
+    return 0;
+}

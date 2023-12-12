@@ -13,7 +13,7 @@ test_union :: fn () #test {
     token2: Token;
 
     // Token has total size of the biggest member.
-    assert(sizeof(token1 == sizeof(string_view));
+    assert(sizeof(token1 == sizeof(string_view)));
 
     token1.as_string = "This is string";
     consumer(&token, Kind.String);

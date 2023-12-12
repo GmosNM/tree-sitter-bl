@@ -92,6 +92,22 @@
           "value": "struct"
         },
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "FIELD",
+              "name": "struct_flags",
+              "content": {
+                "type": "SYMBOL",
+                "name": "flags"
+              }
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
           "type": "FIELD",
           "name": "body",
           "content": {
@@ -524,8 +540,17 @@
               "type": "FIELD",
               "name": "return_type",
               "content": {
-                "type": "SYMBOL",
-                "name": "_type"
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_type"
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "_type_identifier"
+                  }
+                ]
               }
             },
             {
@@ -820,6 +845,18 @@
           "name": "field_access_expression"
         },
         {
+          "type": "SYMBOL",
+          "name": "bit_flip_expression"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "pointer_expression"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "refrence_expression"
+        },
+        {
           "type": "PREC_LEFT",
           "value": 0,
           "content": {
@@ -1025,27 +1062,6 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "CHOICE",
-                "members": [
-                  {
-                    "type": "STRING",
-                    "value": "&"
-                  },
-                  {
-                    "type": "STRING",
-                    "value": "*"
-                  }
-                ]
-              },
-              {
-                "type": "BLANK"
-              }
-            ]
-          },
-          {
             "type": "FIELD",
             "name": "value",
             "content": {
@@ -1085,6 +1101,57 @@
                 "type": "BLANK"
               }
             ]
+          }
+        ]
+      }
+    },
+    "pointer_expression": {
+      "type": "PREC_LEFT",
+      "value": 14,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "*"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_expression"
+          }
+        ]
+      }
+    },
+    "refrence_expression": {
+      "type": "PREC_LEFT",
+      "value": 14,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "&"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_expression"
+          }
+        ]
+      }
+    },
+    "pointer_dereference_expression": {
+      "type": "PREC_LEFT",
+      "value": 14,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "@"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_expression"
           }
         ]
       }
@@ -2040,6 +2107,23 @@
         ]
       }
     },
+    "bit_flip_expression": {
+      "type": "PREC",
+      "value": 6,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "~"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_expression"
+          }
+        ]
+      }
+    },
     "binary_expression": {
       "type": "CHOICE",
       "members": [
@@ -2883,111 +2967,123 @@
       ]
     },
     "_type": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "SYMBOL",
-          "name": "_type_identifier"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "pointer_type"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "pointer_or_null_type"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "array_type"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "null_type"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "refrence_type"
-        },
-        {
-          "type": "ALIAS",
-          "content": {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "STRING",
-                "value": "s8"
-              },
-              {
-                "type": "STRING",
-                "value": "s16"
-              },
-              {
-                "type": "STRING",
-                "value": "s32"
-              },
-              {
-                "type": "STRING",
-                "value": "s64"
-              },
-              {
-                "type": "STRING",
-                "value": "u8"
-              },
-              {
-                "type": "STRING",
-                "value": "u16"
-              },
-              {
-                "type": "STRING",
-                "value": "u32"
-              },
-              {
-                "type": "STRING",
-                "value": "u64"
-              },
-              {
-                "type": "STRING",
-                "value": "usize"
-              },
-              {
-                "type": "STRING",
-                "value": "bool"
-              },
-              {
-                "type": "STRING",
-                "value": "f32"
-              },
-              {
-                "type": "STRING",
-                "value": "f64"
-              },
-              {
-                "type": "STRING",
-                "value": "type"
-              },
-              {
-                "type": "STRING",
-                "value": "Any"
-              },
-              {
-                "type": "STRING",
-                "value": "string_view"
-              },
-              {
-                "type": "STRING",
-                "value": "string"
-              },
-              {
-                "type": "STRING",
-                "value": "Error"
-              }
-            ]
+      "type": "PREC_RIGHT",
+      "value": 0,
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "_type_identifier"
           },
-          "named": true,
-          "value": "primitive_type"
-        }
-      ]
+          {
+            "type": "SYMBOL",
+            "name": "pointer_type"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "pointer_or_null_type"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "array_type"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "null_type"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "refrence_type"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "type_access"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "pointer_dereference_type"
+          },
+          {
+            "type": "ALIAS",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "s8"
+                },
+                {
+                  "type": "STRING",
+                  "value": "s16"
+                },
+                {
+                  "type": "STRING",
+                  "value": "s32"
+                },
+                {
+                  "type": "STRING",
+                  "value": "s64"
+                },
+                {
+                  "type": "STRING",
+                  "value": "u8"
+                },
+                {
+                  "type": "STRING",
+                  "value": "u16"
+                },
+                {
+                  "type": "STRING",
+                  "value": "u32"
+                },
+                {
+                  "type": "STRING",
+                  "value": "u64"
+                },
+                {
+                  "type": "STRING",
+                  "value": "usize"
+                },
+                {
+                  "type": "STRING",
+                  "value": "bool"
+                },
+                {
+                  "type": "STRING",
+                  "value": "f32"
+                },
+                {
+                  "type": "STRING",
+                  "value": "f64"
+                },
+                {
+                  "type": "STRING",
+                  "value": "type"
+                },
+                {
+                  "type": "STRING",
+                  "value": "Any"
+                },
+                {
+                  "type": "STRING",
+                  "value": "string_view"
+                },
+                {
+                  "type": "STRING",
+                  "value": "string"
+                },
+                {
+                  "type": "STRING",
+                  "value": "Error"
+                }
+              ]
+            },
+            "named": true,
+            "value": "primitive_type"
+          }
+        ]
+      }
     },
     "pointer_or_null_type": {
       "type": "SEQ",
@@ -3022,17 +3118,8 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "STRING",
-              "value": "*"
-            },
-            {
-              "type": "STRING",
-              "value": "@"
-            }
-          ]
+          "type": "STRING",
+          "value": "*"
         },
         {
           "type": "FIELD",
@@ -3055,6 +3142,39 @@
           ]
         }
       ]
+    },
+    "pointer_dereference_type": {
+      "type": "PREC_LEFT",
+      "value": 14,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "@"
+          },
+          {
+            "type": "FIELD",
+            "name": "type",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_type"
+            }
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "_expression"
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          }
+        ]
+      }
     },
     "null_type": {
       "type": "SEQ",
@@ -3158,6 +3278,43 @@
           ]
         }
       ]
+    },
+    "type_access": {
+      "type": "PREC_LEFT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "name",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_type_identifier"
+            }
+          },
+          {
+            "type": "REPEAT1",
+            "content": {
+              "type": "FIELD",
+              "name": "member",
+              "content": {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": "."
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "_type_identifier"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
     },
     "flags": {
       "type": "CHOICE",
@@ -3672,6 +3829,21 @@
     [
       "return_expression",
       "compound_assignment_expr"
+    ],
+    [
+      "bit_flip_expression",
+      "binary_expression"
+    ],
+    [
+      "function_item",
+      "_type"
+    ],
+    [
+      "field_access_expression"
+    ],
+    [
+      "field_access_expression",
+      "type_access"
     ]
   ],
   "precedences": [],

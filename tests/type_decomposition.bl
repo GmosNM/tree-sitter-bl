@@ -1,0 +1,23 @@
+Person :: struct {
+    name: string_view;
+    age: s32;
+    parent: *Person;
+}
+
+MyContainer :: fn (TValue: type) type #comptime {
+    return struct {
+        value: TValue;
+    };
+}
+
+// Return type is type of TContainer member value.
+get_value :: fn (container: *?TContainer) *TContainer.value {
+    return &container.value;
+}
+
+main :: fn () s32 {
+    container: MyContainer(u64);
+    value :: get_value(&container);
+    parent_by_value: @Person.parent; // Person type.
+    return 0;
+}
