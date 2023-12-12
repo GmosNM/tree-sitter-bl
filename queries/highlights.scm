@@ -46,6 +46,7 @@
 "fn" @keyword
 "enum" @keyword
 "struct" @keyword
+"union" @keyword
 "return" @keyword
 "if" @keyword
 "else" @keyword
