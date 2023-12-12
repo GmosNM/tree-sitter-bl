@@ -71,6 +71,8 @@ module.exports = grammar({
 
     conflicts: $ => [
         [$.range_expression],
+        [$.field_access_expression],
+        [$.field_expression, $.field_access_expression],
         [$._expression_except_range, $.declaration_expr],
         [$._expression_except_range, $._type],
         [$.declaration_expr, $._type],
@@ -231,6 +233,7 @@ module.exports = grammar({
             $.unary_expression,
             $.parenthesized_expression,
             $.type_cast_expression,
+            $.field_access_expression,
             prec.left($.identifier),
             alias(choice(...builtin_types), $.identifier),
             $.metavariable,
@@ -297,7 +300,6 @@ module.exports = grammar({
             '}',
         ),
 
-
         struct_initializer: $ => prec.left(PREC.additive,seq(
           field('name', $._field_identifier),
           '=',
@@ -312,7 +314,6 @@ module.exports = grammar({
             )),
             prec(-1, 'return'),
         ),
-
 
         return_argements: $ => prec.left(PREC.call, seq(
             '(',
@@ -335,6 +336,13 @@ module.exports = grammar({
             'cast',
             $.arguments,
             $._expression,
+        )),
+
+        field_access_expression: $ => prec.right(PREC.call, seq(
+            field("name",$._type_identifier),
+            field("member",repeat1(seq('.', $._field_identifier))),
+            '=',
+            field("value", $._expression),
         )),
 
         if_expression: $ => prec.right(seq(
