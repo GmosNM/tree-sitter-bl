@@ -1,0 +1,31 @@
+Token :: union {
+    as_string: string_view;
+    as_int: s32;
+}
+
+Kind :: enum {
+    String;
+    Int;
+}
+
+test_union :: fn () #test {
+    token1: Token;
+    token2: Token;
+
+    // Token has total size of the biggest member.
+    assert(sizeof(token1 == sizeof(string_view));
+
+    token1.as_string = "This is string";
+    consumer(&token, Kind.String);
+
+    token2.as_int = 666;
+    consumer(&token, Kind.Int);
+}
+
+consumer :: fn (token: *Token, kind: TokenKind) {
+    switch kind {
+        Kind.String { print("%\n", token.as_string); }
+        Kind.Int    { print("%\n", token.as_int); }
+        default { panic(); }
+    }
+}

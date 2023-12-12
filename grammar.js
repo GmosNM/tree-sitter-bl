@@ -116,6 +116,7 @@ module.exports = grammar({
             $.function_signature_item,
             $.enum_item,
             $.struct_item,
+            $.union_item,
             $.using_declaration,
             $.import_declaration,
             $.load_declaration,
@@ -174,6 +175,14 @@ module.exports = grammar({
                 '=',
                 field('value', $._expression),
             )),
+        ),
+
+        union_item: $ => seq(
+            field('name', $._type_identifier),
+            '::',
+            'union',
+            field('body', $.field_declaration_list),
+            optional(';'),
         ),
 
         function_item: $ => seq(
