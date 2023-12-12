@@ -1,10 +1,25 @@
-
 Person :: struct {
     id: s32;
     name: string_view;
     age: s32;
 }
 
+
 main :: fn () s32 {
-    X :: Person.{ id = 1, name = "Martin", age = 20 };
+    // Set all data in person to 0
+    my_person1 := Person.{};
+
+    // Initialize all members.
+    my_person2 := Person.{ 1, "Martin", 20 };
+
+    // We can explicitly name the members we want to initialize.
+    my_person3 := Person.{ id = 1, name = "Martin", age = 20 };
+
+    // We can change the order.
+    my_person4 := Person.{ name = "Martin", age = 20, id = 1 };
+
+    // Or initialize only something. In such a case the rest is initialized to 0 by default.
+    my_person5 := Person.{ name = "Martin" };
+
+    return 0;
 }

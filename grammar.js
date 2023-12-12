@@ -300,7 +300,7 @@ module.exports = grammar({
             '.',
             '{',
             sepBy(',', choice(
-                $.identifier,
+                $._expression,
                 $.struct_initializer,
             )),
             optional(','),

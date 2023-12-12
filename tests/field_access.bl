@@ -1,9 +1,10 @@
 
-foo :: struct {
+f :: struct {
     bar: s32;
 };
 
 main :: fn() s32{
-    foo :: foo.{};
+    foo := f.{};
     foo.bar = 10;
+    return 0;
 }
