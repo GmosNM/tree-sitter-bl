@@ -133,7 +133,7 @@ module.exports = grammar({
 
         field_declaration_list: $ => seq(
             '{',
-                sepBy(';', $.field_declaration),
+                sepBy(';', choice($.field_declaration, $.enum_field_declaration)),
                 optional(';'),
             '}',
         ),
@@ -144,6 +144,13 @@ module.exports = grammar({
             field('type', $._type),
         ),
 
+        enum_field_declaration: $ => prec.right(0,seq(
+            field('name', $._field_identifier),
+            ':',
+            'enum',
+            $.enum_variant_list,
+        )),
+
         enum_item: $ => seq(
             field('name', $._type_identifier),
             '::',
@@ -153,13 +160,13 @@ module.exports = grammar({
             field('body', $.enum_variant_list),
         ),
 
-        enum_variant_list: $ => seq(
+        enum_variant_list: $ => prec.left(0,seq(
             '{',
                     sepBy(';', $.enum_variant),
                     optional(';'),
             '}',
             optional(';'),
-        ),
+        )),
 
         enum_variant: $ => seq(
             field('name', $.identifier),
@@ -193,7 +200,7 @@ module.exports = grammar({
 
         using_declaration: $ => seq(
             'using',
-            field('argument', choice($.identifier, $.metavariable)),
+            field('argument', choice($.identifier, $.metavariable, $.field_access_expression)),
             ';',
         ),
 
@@ -340,9 +347,12 @@ module.exports = grammar({
 
         field_access_expression: $ => prec.right(PREC.call, seq(
             field("name",$._type_identifier),
-            field("member",repeat1(seq('.', $._field_identifier))),
-            '=',
-            field("value", $._expression),
+            repeat1(field("member",seq('.', $._field_identifier))),
+            optional(seq(
+                    '=',
+                    field("value", $._expression),
+                ),
+            ),
         )),
 
         if_expression: $ => prec.right(seq(
@@ -365,7 +375,6 @@ module.exports = grammar({
             field('value', $._expression),
             field('body', $.switch_block),
         ),
-
 
         switch_block: $ => seq(
             '{',
@@ -419,8 +428,6 @@ module.exports = grammar({
             optional($.flags),
             optional(seq(field('operator', choice('::', ':', ':=', '=')), field('value', $._expression))),
         )),
-
-
 
         unary_expression: $ => prec(PREC.unary, seq(
             choice('-', '*', '!'),
@@ -572,6 +579,7 @@ module.exports = grammar({
             "#test",
             "#build_entry",
             "#entry",
+            "#compiler",
         ),
 
         metavariable: _ => /\$[a-zA-Z_]\w*/,
