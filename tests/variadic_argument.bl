@@ -1,0 +1,22 @@
+sum :: fn (nums: ...s32) s32 {
+    // nums is slice of s32
+    result := 0;
+    loop i := 0; i < nums.len; i += 1 {
+        result += nums[i];
+    }
+
+    return result;
+}
+
+print :: fn (format: string_view, args: ...) s32 {
+    // ...
+}
+
+
+main :: fn () s32 {
+    print("%\n", sum(10, 20, 30));
+    print("%\n", sum(10, 20));
+    print("%\n", sum());
+
+    return 0;
+}

@@ -1,0 +1,30 @@
+Person :: struct {
+    age: s32;
+}
+
+// Function taking two arguments.
+my_function :: fn (person_1: *Person, person_2: Person, age: s32) {
+    age = 30; // This is invalid 'age' is immutable.
+    person_1 = null; // The same for the 'person_1' argument.
+
+    // The 'person_1' here is immutable (you cannot change the pointer to something else),
+    // however you can modify members using this pointer.
+    // The C equivalent would be something like 'struct Person *const person_1'.
+    person_1.age = age;
+
+    // On the other hand the 'person_2' is passed into the function by value, so the
+    // following expression is invalid; you cannot modify its members.
+    parson_2.age = age;
+
+    // You can use de-reference to modify the whole person data; you do not change
+    // the pointer itself (it still points to the same memory, just content of this
+    // memory is being changed).
+    person: Person;
+    @person_1 = person;
+
+    // In case you want to modify the argument value, you should create a local copy.
+    local_age := age;
+    local_age += 2;
+}
+
+

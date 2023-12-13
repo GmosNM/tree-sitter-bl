@@ -1,0 +1,17 @@
+sort :: fn (list: []s32, cmp: *fn(a: *s32, b: *s32) bool)  {
+    loop i := 0; i < list.len; i += 1 {
+        loop j := i+1; j < list.len; j += 1 {
+            if cmp(&list[i], &list[j]) {
+                swap(&list[i], &list[j]);
+            }
+        }
+    }
+}
+
+
+main :: fn () s32 {
+    // Here we pass pointer to anonymous function into the 'sort'.
+    sort(numbers, &fn (a: *s32, b: *s32) bool {
+        return @a < @b;
+    });
+}

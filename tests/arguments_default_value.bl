@@ -1,0 +1,10 @@
+compare :: fn (a: f32, b: f32, epsilon: f32 = 0.1f) bool {
+    return std.abs(a - b) < epsilon;
+}
+
+main :: fn () s32 {
+    compare(13.f, 12.f, 0.001f); // We don't use the default value.
+    compare(13.f, 12.f); // We use default value.
+
+    return 0;
+}

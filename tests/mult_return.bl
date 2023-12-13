@@ -1,0 +1,12 @@
+// Allocate memory on heap for value of 'T' type.
+new :: fn (T: type #comptime, preferred_allocator: *Allocator = null, loc := #call_location)
+          (ptr: *T, err: Error) #inline {
+    mem, err :: alloc(sizeof(T), alignof(T), preferred_allocator, loc);
+    return auto mem, err; 
+}
+
+main :: fn () s32 {
+    number_on_heap :: new(s32);
+    free(auto number_on_heap);
+    return 0;
+}

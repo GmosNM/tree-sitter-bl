@@ -101,6 +101,8 @@ module.exports = grammar({
         [$.function_item, $._type],
         [$.field_access_expression],
         [$.field_access_expression, $.type_access],
+        [$.field_declaration, $.parameter],
+        [$.function_type],
     ],
 
     word: $ => $.identifier,
@@ -258,6 +260,8 @@ module.exports = grammar({
             $.bit_flip_expression,
             $.pointer_expression,
             $.refrence_expression,
+            $.pointer_dereference_type,
+            $.array_index_expression,
             prec.left($.identifier),
             alias(choice(...builtin_types), $.identifier),
             $.metavariable,
@@ -294,25 +298,29 @@ module.exports = grammar({
         )),
 
 
-        pointer_expression: $ => prec.left(PREC.field, seq(
+        pointer_expression: $ => prec.right(0, seq(
             '*',
             $._expression,
         )),
 
-        refrence_expression: $ => prec.left(PREC.field, seq(
+        refrence_expression: $ => prec.left(0, seq(
             '&',
             $._expression,
         )),
 
-        pointer_dereference_expression: $ => prec.left(PREC.field, seq(
+        pointer_dereference_expression: $ => prec.left(0, seq(
             '@',
-            $._expression,
+            $.identifier,
         )),
-
 
         array_index: $ => seq(
             '[', $._expression, ']',
         ),
+
+        array_index_expression: $ => prec.right(PREC.field, seq(
+            $._expression,
+            '[', $._expression, ']',
+        )),
 
         expression_statement: $ => choice(
             seq($._expression, ';'),
@@ -355,9 +363,14 @@ module.exports = grammar({
             prec(-1, 'return'),
         ),
 
-        return_argements: $ => prec.left(PREC.call, seq(
+        return_argements: $ => prec.right(0, seq(
             '(',
-                sepBy(',', seq($._type)),
+                sepBy(',',
+                    choice(
+                        $._type,
+                        $.field_declaration,
+                    )
+                ),
                 optional(','),
             ')',
         )),
@@ -463,7 +476,7 @@ module.exports = grammar({
         )),
 
         unary_expression: $ => prec(PREC.unary, seq(
-            choice('-', '*', '!'),
+            choice('-', '!'),
             $._expression,
         )),
 
@@ -513,9 +526,17 @@ module.exports = grammar({
 
         arguments: $ => seq(
             '(',
-                sepBy(',', seq(optional($.auto_expression),choice($._type, $._expression))),
+                sepBy(',', seq(optional($.auto_expression),choice($._type, $._expression, $.anonymous_function))),
                 optional(','),
             ')',
+        ),
+
+        anonymous_function: $ => seq(
+            optional(choice('&', '*', '@')),
+            'fn',
+            $.parameters,
+            $._type,
+            $.block,
         ),
 
 
@@ -537,7 +558,7 @@ module.exports = grammar({
                 sepBy(',', seq(
                     choice(
                         $.parameter,
-                        $.variadic_parameter,
+                        $.typed_variadic_parameter,
                         $._type,
                     ))),
                 optional(','),
@@ -546,22 +567,36 @@ module.exports = grammar({
 
         variadic_parameter: _ => '...',
 
-        parameter: $ => seq(
+        typed_variadic_parameter: $ => prec.right(-1,seq(
             field('name', choice(
                 $.identifier,
                 $.metavariable,
             )),
             ':',
-            field('type', $._type),
+            optional('...'),
+            choice($._type,$.variadic_parameter),
+        )),
+
+        parameter: $ => prec.right(PREC.field,seq(
+            field('name', choice(
+                $.identifier,
+                $.metavariable,
+            )),
             optional(
                 seq(
-                    '=',
-                    field("initialization", $._expression),
+                    ':',
+                    field('type', $._type),
+                ),
+            ),
+            optional(
+                seq(
+                    choice('=', ':='),
+                    field("initialization", choice($._expression,$.flags)),
                 ),
             ),
             optional($.flags),
             optional($._expression),
-        ),
+        )),
 
 
         // types
@@ -575,6 +610,7 @@ module.exports = grammar({
             $.refrence_type,
             $.type_access,
             $.pointer_dereference_type,
+            $.function_type,
             alias(choice(...builtin_types), $.primitive_type),
         )),
 
@@ -608,6 +644,13 @@ module.exports = grammar({
             optional($._expression),
         ),
 
+        function_type: $ => prec.right(-1,seq(
+            optional(choice('*', '@', '&')),
+            'fn',
+            $.parameters,
+            $._type,
+        )),
+
         array_type: $ => seq(
             '[',
             optional($._expression),
@@ -634,6 +677,7 @@ module.exports = grammar({
             "#build_entry",
             "#entry",
             "#compiler",
+            "#call_location",
         ),
 
         metavariable: _ => /\$[a-zA-Z_]\w*/,

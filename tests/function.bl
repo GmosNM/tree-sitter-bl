@@ -1,0 +1,13 @@
+my_global_function :: fn () {
+    print("Hello from global function!!!\n");
+} // Semicolon is optional here.
+
+test_fn :: fn () #test {
+    my_local_function :: fn () {
+        print("Hello from local function!!!\n");
+    }; // Semicolon is required here.
+
+    // Call functions. 
+    my_global_function();
+    my_local_function();
+}

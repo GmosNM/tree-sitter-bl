@@ -1,0 +1,10 @@
+my_assert :: fn (expression: bool, location : *CodeLocation = #call_location) {
+    if !expression {
+        print("Assert called in '%' on line %.\n", location.file, location.line);
+    }
+}
+
+main :: fn () s32 {
+    my_assert(false);
+    return 0;
+}
